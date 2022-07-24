@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/codemaestro64/stardust/cli"
+	"github.com/codemaestro64/stardust_cli/cli"
 )
 
 func mainCore() error {

@@ -1,4 +1,4 @@
-package main 
+package cli 
 
 type Args struct {
 	args []string
