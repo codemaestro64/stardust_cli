@@ -1,31 +1,31 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 )
 
 type CreateCommand struct {
-	args        *Args
-	subCommands map[string]func() error
+	args *Args
 }
 
 const (
-	createCommand = "Create"
+	createCommand     = "create"
+	createDescription = "create blockchain wallet"
+
+	createMasterWallet = "master-wallet"
+	createBTCWallet    = "btc-wallet"
+	createEthWallet    = "eth-wallet"
+	createNetwork      = "network"
+	createNode         = "node"
 )
 
-func newCreateCommand(args *Args) Command {
-	c := &CreateCommand{
-		args: args,
+func newCreateCommand() Command {
+	return Command{
+		Name:        createCommand,
+		Description: createDescription,
+		Exec:        &CreateCommand{},
 	}
-	c.subCommands = map[string]func() error{
-		"master-wallet": c.createMasterWallet,
-		"btc-wallet":    c.createBTCWallet,
-		"eth-wallet":    c.createEthWallet,
-		"network":       c.createNetwork,
-		"node":          c.createNode,
-	}
-
-	return c
 }
 
 func (c *CreateCommand) createMasterWallet() error {
@@ -57,22 +57,32 @@ func (c *CreateCommand) createNetwork() error {
 func (c *CreateCommand) createNode() error {
 	nodeHash := c.args.pop()
 	if nodeHash == "" {
-		return fmt.Errorf("%s%s", createCommand, "-Node: invalid node hash")
+		return ErrorFromString(fmt.Sprintf("%s-node: invalid node hash", createCommand))
 	}
 
 	fmt.Println("create node")
 	return nil
 }
 
-func (c *CreateCommand) Execute() error {
-	subCommand := c.args.pop()
-	if subCommand == "" {
-		return fmt.Errorf("%s: %s", createCommand, "sub command not supplied")
+func (c *CreateCommand) ExecCommand(ctx context.Context, args []string) error {
+	if len(args) == 0 {
+		return ErrorFromString(fmt.Sprintf("%s: no subcommand passed", createCommand))
+	}
+	c.args = &Args{args}
+
+	subcommand := c.args.pop()
+	switch subcommand {
+	case createMasterWallet:
+		return c.createMasterWallet()
+	case createBTCWallet:
+		return c.createBTCWallet()
+	case createEthWallet:
+		return c.createEthWallet()
+	case createNode:
+		return c.createNode()
+	case createNetwork:
+		return c.createNetwork()
 	}
 
-	if subCommand, ok := c.subCommands[subCommand]; ok {
-		return subCommand()
-	}
-
-	return fmt.Errorf("%s: %s", createCommand, "invalid sub command")
+	return ErrorFromString(fmt.Sprintf("%s: invalid subcommand passed", createCommand))
 }

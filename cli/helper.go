@@ -1,4 +1,10 @@
-package cli 
+package cli
+
+import (
+	"fmt"
+
+	"github.com/fatih/color"
+)
 
 type Args struct {
 	args []string
@@ -20,4 +26,8 @@ func (a *Args) pop() string {
 	a.args = a.args[1:]
 
 	return item
+}
+
+func ErrorFromString(str string) error {
+	return fmt.Errorf(color.RedString(str))
 }

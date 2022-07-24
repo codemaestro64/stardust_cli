@@ -1,32 +1,58 @@
 package cli
 
-import "os"
+import (
+	"context"
+	"os"
 
-type Command interface {
-	Execute() error
-}
-
-var (
-	commands = map[string]func(args *Args) Command{
-		"create": newCreateCommand,
-	}
+	"github.com/cristalhq/acmd"
 )
 
-// GetCommandStub checks if a registered command has been passed via the CLI
-// and returns it to the caller where the command can be executed
-func GetCommandStub() Command {
-	args := &Args{os.Args}
+type Command = acmd.Command
 
-	// remove executable name
-	args.pop()
-	if args.len() == 0 { // no command line arguments passed
-		return nil
+type CLI struct {
+	commands []Command
+	cfg      acmd.Config
+}
+
+const (
+	appName        = "stardust"
+	appDescription = "stardust description"
+	appVersion     = "0.0.1"
+)
+
+var nopFunc = func(context.Context, []string) error { return nil }
+
+func New() *CLI {
+	cfg := acmd.Config{
+		AppName:        appName,
+		AppDescription: appDescription,
+		Version:        appVersion,
+		Output:         os.Stdout,
+		Args:           os.Args,
 	}
 
-	mainCommand := args.pop()
-	if command, ok := commands[mainCommand]; ok {
-		return command(args)
+	// print help if at least one command-line argument is not passed
+	if len(cfg.Args) == 1 {
+		cfg.Args = append(cfg.Args, "help")
 	}
 
-	return nil
+	c := &CLI{
+		cfg: cfg,
+	}
+	c.registerCommands()
+
+	return c
+
+}
+
+func (c *CLI) registerCommands() {
+	cmds := make([]Command, 0)
+	cmds = append(cmds, newCreateCommand())
+	cmds = append(cmds, newInfoCommand())
+
+	c.commands = cmds
+}
+
+func (c *CLI) Run() error {
+	return acmd.RunnerOf(c.commands, c.cfg).Run()
 }
